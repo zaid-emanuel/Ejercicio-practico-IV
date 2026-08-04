@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block titulo %}Mecanografía{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<header class="barra-superior">
+    <a href="{{ url_for('menu') if session.get('usuario_id') else url_for('login') }}" class="logo">&gt; mecanografia_</a>
+    {% if session.get('usuario_id') %}
+    <nav class="nav-usuario">
+        <span class="nombre-sesion">{{ session['usuario'] }}</span>
+        <a href="{{ url_for('logout') }}" class="enlace-salir">salir</a>
+    </nav>
+    {% endif %}
+</header>
+
+<main class="contenedor">
+    {% with mensajes = get_flashed_messages() %}
+        {% if mensajes %}
+        <div class="alerta">
+            {% for mensaje in mensajes %}
+            <p>{{ mensaje }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    {% block contenido %}{% endblock %}
+</main>
+
+</body>
+</html>

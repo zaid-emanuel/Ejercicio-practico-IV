@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block titulo %}Elige tu práctica{% endblock %}
+{% block contenido %}
+
+<div class="animar-entrada">
+    <p class="eyebrow">hola, {{ usuario }}</p>
+    <h1>¿Coexto quieres practr?</h1>
+
+    <div class="tarjetas-menu">
+        <a href="{{ url_for('test', tipo='codigo') }}" class="tarjeta-opcion">
+            <span class="etiqueta-tipo">01</span>
+            <h2>Código Python</h2>
+            <p>Practica escribiendo fragmentos reales de código.</p>
+        </a>
+
+        <a href="{{ url_for('test', tipo='plano') }}" class="tarjeta-opcion">
+            <span class="etiqueta-tipo">02</span>
+            <h2>Texto plano</h2>
+            <p>Practica con párrafos de texto normal.</p>
+        </a>
+
+        <a href="{{ url_for('personalizado') }}" class="tarjeta-opcion">
+            <span class="etiqueta-tipo">03</span>
+            <h2>Texto personalizado</h2>
+            <p>Sube tu propio archivo .txt o .py</p>
+        </a>
+    </div>
+
+    <div class="top-velocistas">
+        <h3>Top 3 más veloces</h3>
+        {% if top_usuarios %}
+        <ul class="lista-top">
+            {% for fila in top_usuarios %}
+            <li>
+                <span class="puesto">{{ loop.index }}</span>
+                <span class="nombre-top">{{ fila.usuario }}</span>
+                <span class="velocidad-top">{{ fila.mejor_velocidad }} PPM</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="sin-resultados">Todavía no hay resultados registrados.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

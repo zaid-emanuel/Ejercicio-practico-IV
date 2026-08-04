@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block titulo %}Texto personalizado{% endblock %}
+{% block contenido %}
+
+<div class="tarjeta tarjeta-angosta animar-entrada">
+    <p class="eyebrow">03 · personalizado</p>
+    <h1>Sube tu archivo</h1>
+    <p class="subtitulo">Acepta archivos .txt o .py. El contenido se usará como texto de la prueba.</p>
+
+    <form method="POST" action="{{ url_for('personalizado') }}" enctype="multipart/form-data" class="formulario">
+        <label for="archivo">Archivo</label>
+        <input type="file" id="archivo" name="archivo" accept=".txt,.py" required>
+
+        <button type="submit" class="boton boton-principal">Comenzar prueba</button>
+    </form>
+
+    <p class="enlace-secundario"><a href="{{ url_for('menu') }}">Volver al menú</a></p>
+</div>
+
+{% endblock %}

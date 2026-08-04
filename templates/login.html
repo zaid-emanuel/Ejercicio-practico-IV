@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titulo %}Iniciar sesión{% endblock %}
+{% block contenido %}
+
+<div class="tarjeta tarjeta-angosta animar-entrada">
+    <p class="eyebrow">acceso</p>
+    <h1>Iniciar sesión</h1>
+
+    <form method="POST" action="{{ url_for('procesar_login') }}" class="formulario">
+        <label for="usuario">Usuario</label>
+        <input type="text" id="usuario" name="usuario" required autofocus>
+
+        <label for="contrasena">Contraseña</label>
+        <input type="password" id="contrasena" name="contrasena" required>
+
+        <button type="submit" class="boton boton-principal" style="background: #3b82f6;">Entrar</button>
+    </form>
+
+    <p class="enlace-secundario">¿No tienes cuenta? <a href="{{ url_for('registro') }}">Crea una aquí</a></p>
+</div>
+
+{% endblock %}
