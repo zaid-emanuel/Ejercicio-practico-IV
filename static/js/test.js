@@ -1,22 +1,36 @@
 const datosTexto = JSON.parse(document.getElementById("texto-datos").textContent);
 
-// Divide el texto completo en oraciones (separadas por . ! ?) y cada oracion en palabras
-const oraciones = datosTexto
-    .split(/(?<=[.!?])\s+/)
-    .map((oracion) => oracion.trim())
-    .filter(Boolean)
-    .map((oracion) => oracion.split(/\s+/).filter(Boolean));
+// Divide el texto en "lineas" para mostrarlas una a la vez:
+// - Si el texto tiene saltos de linea reales (como el codigo), se respetan esas lineas.
+// - Si es un bloque de texto plano sin saltos de linea, se divide por oraciones.
+function dividirEnLineas(texto) {
+    const lineasReales = texto
+        .split("\n")
+        .map((linea) => linea.trim())
+        .filter(Boolean);
+
+    if (lineasReales.length > 1) {
+        return lineasReales;
+    }
+
+    return texto
+        .split(/(?<=[.!?])\s+/)
+        .map((oracion) => oracion.trim())
+        .filter(Boolean);
+}
+
+const oraciones = dividirEnLineas(datosTexto).map((linea) => linea.split(/\s+/).filter(Boolean));
 
 // Lista plana de todas las palabras, en orden, para no romper el resto de la logica
 const palabras = oraciones.flat();
 
-// A que oracion pertenece cada palabra, segun su indice global en "palabras"
+// A que linea pertenece cada palabra, segun su indice global en "palabras"
 const oracionPorPalabra = [];
 oraciones.forEach((oracion, indiceOracion) => {
     oracion.forEach(() => oracionPorPalabra.push(indiceOracion));
 });
 
-// Indice global en el que empieza cada oracion
+// Indice global en el que empieza cada linea
 const inicioOracion = [];
 let acumulado = 0;
 oraciones.forEach((oracion) => {
@@ -40,7 +54,7 @@ let intervalo = null;
 let pruebaIniciada = false;
 let pruebaTerminada = false;
 
-// Dibuja solo la oracion a la que pertenece la palabra actual (una linea a la vez)
+// Dibuja solo la linea a la que pertenece la palabra actual (una linea a la vez)
 function dibujarTexto() {
     const indiceOracionActual = oracionPorPalabra[indiceActual] ?? oracionPorPalabra.length - 1;
     const oracionActual = oraciones[indiceOracionActual];
@@ -157,7 +171,7 @@ function procesarPalabra() {
         return;
     }
 
-    // Si la nueva palabra pertenece a otra oracion, se dibuja la siguiente linea
+    // Si la nueva palabra pertenece a otra linea, se dibuja la siguiente automaticamente
     const oracionNueva = oracionPorPalabra[indiceActual];
     if (oracionNueva !== oracionAnterior) {
         dibujarTexto();
@@ -173,8 +187,8 @@ function retrocederPalabra() {
         return;
     }
 
-    // Si la palabra anterior quedo en la oracion previa (ya no esta dibujada), se
-    // vuelve a mostrar esa oracion antes de tocarla
+    // Si la palabra anterior quedo en la linea previa (ya no esta dibujada), se
+    // vuelve a mostrar esa linea antes de tocarla
     if (oracionPorPalabra[indicePrevio] !== oracionPorPalabra[indiceActual]) {
         indiceActual = indicePrevio;
         dibujarTexto();
