@@ -12,6 +12,7 @@ app = Flask(__name__)
 app.secret_key = "cambia-esta-clave-por-una-propia-y-segura"
 
 EXTENSIONES_PERMITIDAS = {"txt", "py"}
+MAX_INTENTOS_FALLIDOS = 4
 
 
 def archivo_permitido(nombre_archivo):
@@ -46,13 +47,46 @@ def procesar_login():
         with conexion.cursor() as cursor:
             cursor.execute("SELECT * FROM Usuario WHERE usuario = %s", (usuario,))
             fila = cursor.fetchone()
+
+            if not fila:
+                flash("Usuario o contraseña incorrectos")
+                return redirect(url_for("login"))
+
+            if fila["cuenta_bloqueada"]:
+                flash("Tu cuenta está bloqueada por demasiados intentos fallidos. Contacta al administrador.")
+                return redirect(url_for("login"))
+
+            if check_password_hash(fila["contrasena"], contrasena):
+                # Login correcto: se reinicia el contador de intentos fallidos
+                cursor.execute(
+                    "UPDATE Usuario SET intentos_fallidos = 0 WHERE id = %s",
+                    (fila["id"],),
+                )
+                conexion.commit()
+
+                session["usuario_id"] = fila["id"]
+                session["usuario"] = fila["usuario"]
+                return redirect(url_for("menu"))
+
+            # Contraseña incorrecta: se suma un intento fallido
+            nuevos_intentos = fila["intentos_fallidos"] + 1
+
+            if nuevos_intentos >= MAX_INTENTOS_FALLIDOS:
+                cursor.execute(
+                    "UPDATE Usuario SET intentos_fallidos = %s, cuenta_bloqueada = 1 WHERE id = %s",
+                    (nuevos_intentos, fila["id"]),
+                )
+                conexion.commit()
+                flash("Cuenta bloqueada por demasiados intentos fallidos. Contacta al administrador.")
+                return redirect(url_for("login"))
+
+            cursor.execute(
+                "UPDATE Usuario SET intentos_fallidos = %s WHERE id = %s",
+                (nuevos_intentos, fila["id"]),
+            )
+            conexion.commit()
     finally:
         conexion.close()
-
-    if fila and check_password_hash(fila["contrasena"], contrasena):
-        session["usuario_id"] = fila["id"]
-        session["usuario"] = fila["usuario"]
-        return redirect(url_for("menu"))
 
     flash("Usuario o contraseña incorrectos")
     return redirect(url_for("login"))
