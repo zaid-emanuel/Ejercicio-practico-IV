@@ -370,9 +370,10 @@ h1 {
 
 .tiempo {
     font-family: var(--fuente-mono);
-    font-size: 14px;
+    font-size: 24px;
     color: var(--advertencia);
     font-weight: 700;
+    letter-spacing: 0.02em;
 }
 
 .cuerpo-terminal {
