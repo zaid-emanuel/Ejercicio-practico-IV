@@ -1,43 +1,5 @@
 const datosTexto = JSON.parse(document.getElementById("texto-datos").textContent);
 
-// Divide el texto en "lineas" para mostrarlas una a la vez:
-// - Si el texto tiene saltos de linea reales (como el codigo), se respetan esas lineas.
-// - Si es un bloque de texto plano sin saltos de linea, se divide por oraciones.
-function dividirEnLineas(texto) {
-    const lineasReales = texto
-        .split("\n")
-        .map((linea) => linea.trim())
-        .filter(Boolean);
-
-    if (lineasReales.length > 1) {
-        return lineasReales;
-    }
-
-    return texto
-        .split(/(?<=[.!?])\s+/)
-        .map((oracion) => oracion.trim())
-        .filter(Boolean);
-}
-
-const oraciones = dividirEnLineas(datosTexto).map((linea) => linea.split(/\s+/).filter(Boolean));
-
-// Lista plana de todas las palabras, en orden, para no romper el resto de la logica
-const palabras = oraciones.flat();
-
-// A que linea pertenece cada palabra, segun su indice global en "palabras"
-const oracionPorPalabra = [];
-oraciones.forEach((oracion, indiceOracion) => {
-    oracion.forEach(() => oracionPorPalabra.push(indiceOracion));
-});
-
-// Indice global en el que empieza cada linea
-const inicioOracion = [];
-let acumulado = 0;
-oraciones.forEach((oracion) => {
-    inicioOracion.push(acumulado);
-    acumulado += oracion.length;
-});
-
 const contenedorTexto = document.getElementById("texto-prueba");
 const entrada = document.getElementById("entrada-usuario");
 const marcadorTiempo = document.getElementById("tiempo-restante");
@@ -47,6 +9,75 @@ const valorWpm = document.getElementById("valor-wpm");
 
 const DURACION_SEGUNDOS = 60;
 
+// Primero se respetan los saltos de linea reales del texto (importante para el codigo).
+// Si el texto no tiene saltos de linea (como los parrafos de texto plano), queda un solo segmento.
+const segmentosReales = datosTexto
+    .split("\n")
+    .map((segmento) => segmento.trim())
+    .filter(Boolean);
+
+// Mide, dentro del propio contenedor visible, en donde el navegador corta cada
+// segmento visualmente (segun el ancho real de la ventana) y regresa cuantas
+// palabras entran en cada linea visual.
+function medirSublineas(palabrasSegmento) {
+    contenedorTexto.style.visibility = "hidden";
+    contenedorTexto.innerHTML = palabrasSegmento
+        .map((palabra) => `<span class="palabra-medicion">${palabra}</span>`)
+        .join(" ");
+
+    const conteos = [];
+    let topActual = null;
+    let contadorActual = 0;
+
+    document.querySelectorAll(".palabra-medicion").forEach((elemento) => {
+        const top = elemento.offsetTop;
+        if (topActual === null || top !== topActual) {
+            if (contadorActual > 0) {
+                conteos.push(contadorActual);
+            }
+            contadorActual = 0;
+            topActual = top;
+        }
+        contadorActual += 1;
+    });
+    if (contadorActual > 0) {
+        conteos.push(contadorActual);
+    }
+
+    contenedorTexto.innerHTML = "";
+    contenedorTexto.style.visibility = "visible";
+
+    return conteos;
+}
+
+// Construye la lista global de palabras y los grupos de "una linea visual a la vez"
+const palabras = [];
+const lineas = [];
+
+segmentosReales.forEach((segmento) => {
+    const palabrasSegmento = segmento.split(/\s+/).filter(Boolean);
+    const conteosPorSublinea = medirSublineas(palabrasSegmento);
+
+    let cursor = 0;
+    conteosPorSublinea.forEach((cantidad) => {
+        const grupo = [];
+        for (let i = 0; i < cantidad; i += 1) {
+            grupo.push(palabras.length);
+            palabras.push(palabrasSegmento[cursor]);
+            cursor += 1;
+        }
+        lineas.push(grupo);
+    });
+});
+
+// A que linea visual pertenece cada palabra, segun su indice global
+const oracionPorPalabra = [];
+lineas.forEach((grupo, indiceLinea) => {
+    grupo.forEach((indiceGlobal) => {
+        oracionPorPalabra[indiceGlobal] = indiceLinea;
+    });
+});
+
 let indiceActual = 0;
 let palabrasCorrectas = 0;
 let tiempoRestante = DURACION_SEGUNDOS;
@@ -54,15 +85,14 @@ let intervalo = null;
 let pruebaIniciada = false;
 let pruebaTerminada = false;
 
-// Dibuja solo la linea a la que pertenece la palabra actual (una linea a la vez)
+// Dibuja solo la linea visual a la que pertenece la palabra actual
 function dibujarTexto() {
-    const indiceOracionActual = oracionPorPalabra[indiceActual] ?? oracionPorPalabra.length - 1;
-    const oracionActual = oraciones[indiceOracionActual];
-    const inicio = inicioOracion[indiceOracionActual];
+    const indiceLineaActual = oracionPorPalabra[indiceActual] ?? lineas.length - 1;
+    const lineaActual = lineas[indiceLineaActual];
 
-    contenedorTexto.innerHTML = oracionActual
-        .map((palabra, indiceLocal) => {
-            const indiceGlobal = inicio + indiceLocal;
+    contenedorTexto.innerHTML = lineaActual
+        .map((indiceGlobal) => {
+            const palabra = palabras[indiceGlobal];
             const letras = palabra
                 .split("")
                 .map((letra) => `<span class="letra">${letra}</span>`)
@@ -161,7 +191,7 @@ function procesarPalabra() {
         }
     }
 
-    const oracionAnterior = oracionPorPalabra[indiceActual];
+    const lineaAnterior = oracionPorPalabra[indiceActual];
     indiceActual += 1;
     entrada.value = "";
     barraProgreso.style.width = `${(indiceActual / palabras.length) * 100}%`;
@@ -171,9 +201,9 @@ function procesarPalabra() {
         return;
     }
 
-    // Si la nueva palabra pertenece a otra linea, se dibuja la siguiente automaticamente
-    const oracionNueva = oracionPorPalabra[indiceActual];
-    if (oracionNueva !== oracionAnterior) {
+    // Si la nueva palabra pertenece a otra linea visual, se dibuja automaticamente
+    const lineaNueva = oracionPorPalabra[indiceActual];
+    if (lineaNueva !== lineaAnterior) {
         dibujarTexto();
     } else {
         marcarPalabraActual();
