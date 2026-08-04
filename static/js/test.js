@@ -1,5 +1,28 @@
 const datosTexto = JSON.parse(document.getElementById("texto-datos").textContent);
-const palabras = datosTexto.split(/\s+/).filter(Boolean);
+
+// Divide el texto completo en oraciones (separadas por . ! ?) y cada oracion en palabras
+const oraciones = datosTexto
+    .split(/(?<=[.!?])\s+/)
+    .map((oracion) => oracion.trim())
+    .filter(Boolean)
+    .map((oracion) => oracion.split(/\s+/).filter(Boolean));
+
+// Lista plana de todas las palabras, en orden, para no romper el resto de la logica
+const palabras = oraciones.flat();
+
+// A que oracion pertenece cada palabra, segun su indice global en "palabras"
+const oracionPorPalabra = [];
+oraciones.forEach((oracion, indiceOracion) => {
+    oracion.forEach(() => oracionPorPalabra.push(indiceOracion));
+});
+
+// Indice global en el que empieza cada oracion
+const inicioOracion = [];
+let acumulado = 0;
+oraciones.forEach((oracion) => {
+    inicioOracion.push(acumulado);
+    acumulado += oracion.length;
+});
 
 const contenedorTexto = document.getElementById("texto-prueba");
 const entrada = document.getElementById("entrada-usuario");
@@ -17,14 +40,20 @@ let intervalo = null;
 let pruebaIniciada = false;
 let pruebaTerminada = false;
 
+// Dibuja solo la oracion a la que pertenece la palabra actual (una linea a la vez)
 function dibujarTexto() {
-    contenedorTexto.innerHTML = palabras
-        .map((palabra, indice) => {
+    const indiceOracionActual = oracionPorPalabra[indiceActual] ?? oracionPorPalabra.length - 1;
+    const oracionActual = oraciones[indiceOracionActual];
+    const inicio = inicioOracion[indiceOracionActual];
+
+    contenedorTexto.innerHTML = oracionActual
+        .map((palabra, indiceLocal) => {
+            const indiceGlobal = inicio + indiceLocal;
             const letras = palabra
                 .split("")
                 .map((letra) => `<span class="letra">${letra}</span>`)
                 .join("");
-            return `<span class="palabra" data-indice="${indice}">${letras}</span>`;
+            return `<span class="palabra" data-indice="${indiceGlobal}">${letras}</span>`;
         })
         .join(" ");
     marcarPalabraActual();
@@ -118,6 +147,7 @@ function procesarPalabra() {
         }
     }
 
+    const oracionAnterior = oracionPorPalabra[indiceActual];
     indiceActual += 1;
     entrada.value = "";
     barraProgreso.style.width = `${(indiceActual / palabras.length) * 100}%`;
@@ -127,17 +157,36 @@ function procesarPalabra() {
         return;
     }
 
-    marcarPalabraActual();
+    // Si la nueva palabra pertenece a otra oracion, se dibuja la siguiente linea
+    const oracionNueva = oracionPorPalabra[indiceActual];
+    if (oracionNueva !== oracionAnterior) {
+        dibujarTexto();
+    } else {
+        marcarPalabraActual();
+    }
 }
 
 // Permite volver a la palabra anterior si quedo marcada como incorrecta
 function retrocederPalabra() {
-    const palabraAnterior = document.querySelector(`.palabra[data-indice="${indiceActual - 1}"]`);
+    const indicePrevio = indiceActual - 1;
+    if (indicePrevio < 0) {
+        return;
+    }
+
+    // Si la palabra anterior quedo en la oracion previa (ya no esta dibujada), se
+    // vuelve a mostrar esa oracion antes de tocarla
+    if (oracionPorPalabra[indicePrevio] !== oracionPorPalabra[indiceActual]) {
+        indiceActual = indicePrevio;
+        dibujarTexto();
+        return;
+    }
+
+    const palabraAnterior = document.querySelector(`.palabra[data-indice="${indicePrevio}"]`);
     if (!palabraAnterior || !palabraAnterior.classList.contains("incorrecta")) {
         return;
     }
 
-    indiceActual -= 1;
+    indiceActual = indicePrevio;
     palabraAnterior.classList.remove("correcta", "incorrecta");
     palabraAnterior.querySelectorAll(".letra").forEach((letra) => {
         letra.classList.remove("correcta", "incorrecta", "cursor");
