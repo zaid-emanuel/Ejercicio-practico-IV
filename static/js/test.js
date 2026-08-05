@@ -8,6 +8,8 @@ const pantallaResultado = document.getElementById("pantalla-resultado");
 const valorWpm = document.getElementById("valor-wpm");
 const elementoRacha = document.getElementById("racha");
 const valorRacha = document.getElementById("racha-valor");
+const iconoVelocidad = document.getElementById("icono-velocidad");
+const etiquetaVelocidad = document.getElementById("etiqueta-velocidad");
 
 const DURACION_SEGUNDOS = 60;
 const RACHA_MINIMA = 4;
@@ -148,6 +150,17 @@ function iniciarCuentaRegresiva() {
     }, 1000);
 }
 
+// Determina el icono y la etiqueta segun la velocidad alcanzada (PPM)
+function obtenerVelocidadVisual(ppm) {
+    if (ppm > 60) {
+        return { icono: "🐆", etiqueta: "Chita" };
+    }
+    if (ppm > 31) {
+        return { icono: "🐇", etiqueta: "Liebre" };
+    }
+    return { icono: "🐌", etiqueta: "Caracol" };
+}
+
 function finalizarPrueba() {
     if (pruebaTerminada) {
         return;
@@ -162,6 +175,11 @@ function finalizarPrueba() {
     const palabrasPorMinuto = Math.round(palabrasCorrectas / minutos);
 
     valorWpm.textContent = palabrasPorMinuto;
+
+    const visual = obtenerVelocidadVisual(palabrasPorMinuto);
+    iconoVelocidad.textContent = visual.icono;
+    etiquetaVelocidad.textContent = visual.etiqueta;
+
     pantallaResultado.classList.add("visible");
 
     fetch("/guardar_resultado", {

@@ -537,3 +537,20 @@ h1 {
         transform: translateY(0) scale(1);
     }
 }
+
+/* Icono y etiqueta de velocidad en el resultado */
+
+.icono-velocidad {
+    font-size: 56px;
+    margin: 0 0 8px;
+    line-height: 1;
+}
+
+.etiqueta-velocidad {
+    font-family: var(--fuente-mono);
+    color: var(--texto-tenue);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: -16px 0 4px;
+}
