@@ -498,3 +498,42 @@ h1 {
     color: var(--acento);
     margin: 8px 0 24px;
 }
+
+/* Animacion de racha */
+
+.racha {
+    position: fixed;
+    top: 90px;
+    right: 40px;
+    background: var(--superficie);
+    border: 1px solid var(--acento);
+    color: var(--acento);
+    font-family: var(--fuente-mono);
+    font-weight: 700;
+    font-size: 18px;
+    padding: 12px 20px;
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(94, 234, 212, 0.25);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px) scale(0.9);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.racha.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    animation: racha-pulso 0.5s ease;
+}
+
+@keyframes racha-pulso {
+    0% {
+        transform: translateY(-10px) scale(0.8);
+    }
+    50% {
+        transform: translateY(0) scale(1.15);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+    }
+}

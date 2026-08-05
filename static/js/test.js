@@ -6,8 +6,11 @@ const marcadorTiempo = document.getElementById("tiempo-restante");
 const barraProgreso = document.getElementById("barra-progreso");
 const pantallaResultado = document.getElementById("pantalla-resultado");
 const valorWpm = document.getElementById("valor-wpm");
+const elementoRacha = document.getElementById("racha");
+const valorRacha = document.getElementById("racha-valor");
 
 const DURACION_SEGUNDOS = 60;
+const RACHA_MINIMA = 4;
 
 // Primero se respetan los saltos de linea reales del texto (importante para el codigo).
 // Si el texto no tiene saltos de linea (como los parrafos de texto plano), queda un solo segmento.
@@ -84,6 +87,8 @@ let tiempoRestante = DURACION_SEGUNDOS;
 let intervalo = null;
 let pruebaIniciada = false;
 let pruebaTerminada = false;
+let rachaActual = 0;
+let temporizadorRacha = null;
 
 // Dibuja solo la linea visual a la que pertenece la palabra actual
 function dibujarTexto() {
@@ -166,6 +171,20 @@ function finalizarPrueba() {
     });
 }
 
+// Muestra el indicador de racha con el valor actual y lo oculta despues de un momento
+function mostrarRacha() {
+    valorRacha.textContent = rachaActual;
+    elementoRacha.classList.remove("visible");
+    // Se fuerza un reflow para que la animacion se pueda repetir en rachas seguidas
+    void elementoRacha.offsetWidth;
+    elementoRacha.classList.add("visible");
+
+    clearTimeout(temporizadorRacha);
+    temporizadorRacha = setTimeout(() => {
+        elementoRacha.classList.remove("visible");
+    }, 1500);
+}
+
 // Se ejecuta cuando el usuario confirma una palabra con espacio o enter
 function procesarPalabra() {
     const escrita = entrada.value.trim();
@@ -188,6 +207,16 @@ function procesarPalabra() {
         if (esCorrecta && !elementoActual.dataset.contada) {
             palabrasCorrectas += 1;
             elementoActual.dataset.contada = "1";
+        }
+
+        // Control de racha: se suma con cada acierto, se reinicia con cada fallo
+        if (esCorrecta) {
+            rachaActual += 1;
+            if (rachaActual >= RACHA_MINIMA && rachaActual % RACHA_MINIMA === 0) {
+                mostrarRacha();
+            }
+        } else {
+            rachaActual = 0;
         }
     }
 
