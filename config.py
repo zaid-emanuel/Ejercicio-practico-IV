@@ -1,13 +1,17 @@
+import os
+
 import pymysql
 from pymysql.cursors import DictCursor
 
-# Ajusta estos datos segun tu instalacion de MySQL
+# Los valores de conexion se leen de variables de entorno.
+# Si no existen (por ejemplo, en desarrollo local sin configurar nada),
+# se usan estos valores por defecto como respaldo.
 DB_CONFIG = {
-    "host": "localhost",
-    "user": "root",
-    "password": "12345678",
-    "database": "mecanografia_db",
-    "port": 3306,
+    "host": os.environ.get("MYSQLHOST", "altaria.proxy.rlwy.net"),
+    "user": os.environ.get("MYSQLUSER", "root"),
+    "password": os.environ.get("MYSQLPASSWORD", "tfkOlWTJHggDXfgdegTVXMzOgkMCXWQw"),
+    "database": os.environ.get("MYSQLDATABASE", "railway"),
+    "port": int(os.environ.get("MYSQLPORT", 50222)),
     "cursorclass": DictCursor,
 }
 
